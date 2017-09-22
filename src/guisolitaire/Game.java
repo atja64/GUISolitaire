@@ -24,7 +24,6 @@ public class Game {
 	private final Random random = new Random();
 	private final GraphicsContext gc;
 	private final double CARD_WIDTH = 100, CARD_HEIGHT = 145.2, ROUNDING_FACTOR = 10;
-	private final String RESOURCE_PATH = "C:\\Users\\ashle\\Documents\\Programming\\NetBeansProjects\\GUISolitaire\\src\\guisolitaire\\resources\\";
 	
 	private Card selected;
 	
@@ -211,11 +210,10 @@ public class Game {
 		for (Suit suit : Suit.values()) {
 			for (Value value : Value.values()) {
 				String filename = value.toString().toLowerCase() + "of" + suit.toString().toLowerCase() + "s";
-				String URL = "file:" + RESOURCE_PATH + "cards\\" + filename + ".png";
-				imageCache.put(filename, new Image(URL));
+				imageCache.put(filename, new Image(this.getClass().getResourceAsStream("/res/cards/" +  filename + ".png")));
 			}
 		}
-		imageCache.put("cardback", new Image("file:" + RESOURCE_PATH + "cards\\cardback.png"));
+		imageCache.put("cardback", new Image(this.getClass().getResourceAsStream("/res/cards/cardback.png")));
 	}
 	
 	/**

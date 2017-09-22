@@ -14,7 +14,7 @@ import javafx.stage.Stage;
 public class GUISolitaire extends Application {
 
 	@Override
-	public void start(Stage primaryStage) {
+	public void start(Stage primaryStage) {		
 		Canvas canvas = new Canvas(900, 600);
 		
 		Game game = new Game(canvas.getGraphicsContext2D());
