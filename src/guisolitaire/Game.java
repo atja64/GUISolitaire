@@ -120,7 +120,8 @@ class Game {
 		for (int i = 0; i < 7; i++) {
 			boardBounds.add(new ArrayList<>());
 			Stack<Card> stack = board.get(i);
-			for (int j = 0; j < stack.size(); j++) {
+			boardBounds.get(i).add(new BoundingBox(PADDING + (CARD_WIDTH + PADDING) * i, PADDING * 2 + CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT));
+			for (int j = 1; j < stack.size(); j++) {
 				boardBounds.get(i).add(new BoundingBox(PADDING + (CARD_WIDTH + PADDING) * i, PADDING * (2 + j) + CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT));
 			}
 		}
@@ -347,10 +348,12 @@ class Game {
 		for (int i = 0; i < 7; i++) {
 			List<BoundingBox> boundsList = boardBounds.get(i);
 			for (int j = 0; j < boundsList.size(); j++) {
-				if (boundsList.get(j).contains(x, y) && board.get(i).get(j).isRevealed()) {
-					indexX = i;
-					indexY = j;
-					boardClicked = true;
+				if (boundsList.get(j).contains(x, y)) {
+					if (board.get(i).isEmpty() || board.get(i).get(j).isRevealed()) {
+						indexX = i;
+						indexY = j;
+						boardClicked = true;
+					}
 				}
 			}
 			if (boardClicked) {
@@ -435,7 +438,7 @@ class Game {
 		}
 		if (selected == card) {
 			deselect();
-		} else if (selected != null && indexY == stack.size() - 1) {
+		} else if (selected != null && (indexY == stack.size() - 1 || indexY == 0)) {
 			if (isValidBoardMove(card, selected)) {
 				moveCard(stack);
 				generateBoardBounds();
