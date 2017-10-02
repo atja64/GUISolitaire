@@ -1,13 +1,12 @@
 package guisolitaire;
 
 /**
- *
+ * A class to store a card including its value, suit and color.
  * @author Ashley Allen
  */
 class Card {
 	private final Suit suit;
 	private final Value value;
-	private final CardColor color;
 	
 	private boolean revealed = false, selected = false;
 	
@@ -19,11 +18,6 @@ class Card {
 	Card(Suit suit, Value value) {
 		this.suit = suit;
 		this.value = value;
-		if (suit == Suit.HEART || suit == Suit.DIAMOND) {
-			color = CardColor.RED;
-		} else {
-			color = CardColor.BLACK;
-		}
 	}
 	
 	/**
@@ -47,7 +41,11 @@ class Card {
 	 * @return the card's color
 	 */
 	CardColor getColor() {
-		return color;
+		if (suit == Suit.HEART || suit == Suit.DIAMOND) {
+			return CardColor.RED;
+		} else {
+			return CardColor.BLACK;
+		}
 	}
 	
 	/**

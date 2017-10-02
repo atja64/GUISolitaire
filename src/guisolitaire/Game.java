@@ -153,15 +153,32 @@ class Game {
 	private boolean isValidBoardMove(Card parent, Card child) {
 	    //Explicit if statements preserved for clarity
 		if (parent == null) {
-			return true;
-		}
-		if (parent.getValue() == Value.ACE) {
-			return false;
+			return child.getValue() == Value.KING;
 		}
 		if (parent.getColor() == child.getColor()) {
 			return false;
 		}
 		if (parent.getValue().ordinal() != child.getValue().ordinal() + 1) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Check whether placing the child on the parent would be a valid move according to the foundation rules
+	 * @param parent the parent Card to check
+	 * @param child the child Card to check
+	 * @return true if the move is valid
+	 */
+	private boolean isValidFoundationsMove(Card parent, Card child) {
+		//Explicit if statements preserved for clarity
+		if (parent == null) {
+			return child.getValue() == Value.ACE;
+		}
+		if (parent.getSuit() != child.getSuit()) {
+			return false;
+		}
+		if (parent.getValue().ordinal() != child.getValue().ordinal() - 1) {
 			return false;
 		}
 		return true;
@@ -412,10 +429,13 @@ class Game {
      */
 	private void boardClicked(int indexX, int indexY) {
 		Stack<Card> stack = board.get(indexX);
-		Card card = stack.get(indexY);
+		Card card = null;
+		if (!stack.isEmpty()) {
+			card = stack.get(indexY);
+		}
 		if (selected == card) {
 			deselect();
-		} else if (selected != null & indexY == stack.size() - 1) {
+		} else if (selected != null && indexY == stack.size() - 1) {
 			if (isValidBoardMove(card, selected)) {
 				moveCard(stack);
 				generateBoardBounds();
@@ -432,17 +452,29 @@ class Game {
 
     /**
      * Handle the foundations being clicked
-     * @param index
+     * @param index the index of the foundation clicked
      */
 	private void foundationsClicked(int index) {
-		Card card = foundations.get(index).peek();
+		Stack<Card> stack = foundations.get(index);
+		Card card = null;
+		if (!stack.isEmpty()) {
+			card = stack.peek();
+		}
 		if (selected == card) {
 			deselect();
+		} else if (selected != null) {
+			if (isValidFoundationsMove(card, selected)) {
+				moveCard(stack);
+				generateBoardBounds();
+				deselect();
+			} else {
+				alertText = "Invalid move!";
+				deselect();
+			}
 		} else {
 			deselect();
 			select(card);
 		}
-		card.toggleSelected();
 	}
 
     /**
@@ -485,9 +517,11 @@ class Game {
      */
 	private void revealCards() {
 		for (Stack<Card> stack : board) {
-			Card card = stack.peek();
-			if (!card.isRevealed()) {
-				card.reveal();
+			if (!stack.isEmpty()) {
+				Card card = stack.peek();
+				if (!card.isRevealed()) {
+					card.reveal();
+				}
 			}
 		}
 	}
