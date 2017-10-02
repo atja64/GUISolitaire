@@ -5,6 +5,7 @@ A GUI version of solitaire made with JavaFX
 
 * You can display the game
 * You can click on some cards and they'll be highlighted
+* You can move cards from the foundations and the board to the board
 
 ## To-Do
 

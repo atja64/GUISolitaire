@@ -12,13 +12,15 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 
 /**
- *
+ * The main game controller class that handles all game functions and inputs
  * @author Ashley Allen
  */
 class Game {
+    //Constants
 	private final double CARD_WIDTH = 100, CARD_HEIGHT = 145.2,
 		ROUNDING_FACTOR = 10, PADDING = 25;	
-	
+
+	//Variables used to store the cards and bounds for the game
 	private final Stack<Card> hand = new Stack<>(),
 		waste = new Stack<>();
 	private final List<Stack<Card>> board = new ArrayList<>(), foundations = new ArrayList<>();
@@ -26,13 +28,20 @@ class Game {
 		wasteBounds = new BoundingBox(PADDING * 2 + CARD_WIDTH, PADDING, CARD_WIDTH, CARD_HEIGHT);
 	private final List<BoundingBox> foundationsBounds = new ArrayList<>();
 	private final List<List<BoundingBox>> boardBounds = new ArrayList<>();
+
 	private final Map<String, Image> imageCache = new HashMap<>();
 	private final Random random = new Random();
 	private final GraphicsContext gc;
 
+	//Variables that can change during the game which need global access
 	private String alertText = null;
 	private Card selected = null;
-	
+
+    /**
+     * The main constructor which initialises the game in its entirety and handles all the card movement before drawing
+     * the game
+     * @param gc the GraphicsContext to write to, should be gotten from a Canvas object.
+     */
 	Game(GraphicsContext gc) {
 		this.gc = gc;
 		initVars();
@@ -101,7 +110,11 @@ class Game {
 			board.add(stack);
 		}
 	}
-	
+
+    /**
+     * Generate a BoundingBox for each card on the board.
+     * TODO: Possibly change to each Card having a BoundingBox
+     */
 	private void generateBoardBounds() {
 		boardBounds.clear();
 		for (int i = 0; i < 7; i++) {
@@ -130,8 +143,15 @@ class Game {
 			hand.push(waste.pop());
 		}
 	}
-	
+
+    /**
+     * Check whether placing the child on the parent would be a valid move according to the board rules
+     * @param parent the parent Card to check
+     * @param child the child Card to check
+     * @return true if the move is valid
+     */
 	private boolean isValidBoardMove(Card parent, Card child) {
+	    //Explicit if statements preserved for clarity
 		if (parent == null) {
 			return true;
 		}
@@ -147,6 +167,11 @@ class Game {
 		return true;
 	}
 
+    /**
+     * Move the selected card to the specified Stack
+     * TODO: Make more efficient than checking each Stack for the presence of the selected card
+     * @param stack the Stack to move to
+     */
 	private void moveCard(Stack<Card> stack) {
 		waste.remove(selected);
 		for (Stack<Card> boardStack : board) {
@@ -157,8 +182,12 @@ class Game {
 		}
 		stack.push(selected);
 	}
-	
+
+    /**
+     * Draw the game to the provided GraphicsContext
+     */
 	private void drawGame() {
+	    //Clear the game canvas
 		gc.clearRect(0, 0, 900, 600);
 		
 		//Draw the hand
@@ -209,17 +238,25 @@ class Game {
 			}
 		}
 
+		//Draw the card indicator text
 		if (selected != null) {
 			drawText(selected.getName(), 10, 590);
 		} else {
 			drawText("null", 10, 590);
 		}
 
+		//Draw the alert text
 		if (alertText != null) {
 			drawText(alertText, 890, 590, Color.RED, TextAlignment.RIGHT);
 		}
 	}
-	
+
+    /**
+     * Draw the specified Card to the game canvas
+     * @param card the card to draw
+     * @param x the x coordinate to draw at
+     * @param y the y coordinate to draw at
+     */
 	private void drawCard(Card card, double x, double y) {
 		gc.drawImage(imageCache.get(card.getName()), x, y, CARD_WIDTH, CARD_HEIGHT);
 		if (card.isSelected()) {
@@ -228,11 +265,21 @@ class Game {
 			gc.strokeRoundRect(x, y, CARD_WIDTH, CARD_HEIGHT, ROUNDING_FACTOR, ROUNDING_FACTOR);
 		}
 	}
-	
+
+    /**
+     * Draw a cardback to the game canvas
+     * @param x the x coordinate to draw at
+     * @param y the y coordinate to draw at
+     */
 	private void drawCardBack(double x, double y) {
 		gc.drawImage(imageCache.get("cardback"), x, y, CARD_WIDTH, CARD_HEIGHT);
 	}
-	
+
+    /**
+     * Draw an empty card space to the game canvas
+     * @param x the x coordinate to draw at
+     * @param y the y coordinate to draw at
+     */
 	private void drawEmpty(double x, double y) {
 		gc.setStroke(Color.WHITE);
 		gc.setLineWidth(1);
@@ -251,10 +298,15 @@ class Game {
 		}
 		imageCache.put("cardback", new Image(this.getClass().getResourceAsStream("/res/cards/cardback.png")));
 	}
-	
+
+    /**
+     * Handle the mouse being clicked
+     * @param me the MouseEvent passed from the GUISolitaire class
+     */
 	void handleMouseClicked(MouseEvent me) {
 		double x = me.getX(), y = me.getY();
 
+        //Reset the alert text
 		alertText = null;
 
 		//Handle hand interactivity
@@ -271,7 +323,8 @@ class Game {
 			return;
 		}
 		
-		//Handle board interactivity
+		//Handle board interactivity. Checks the bounds for each card on the board to see if any have been clicked. If
+        //the mouse was clicked at an overlap of bounds it selects the topmost one.
 		boolean boardClicked = false;
 		int indexX = -1, indexY = -1;
 		for (int i = 0; i < 7; i++) {
@@ -304,6 +357,9 @@ class Game {
 		finish(me);
 	}
 
+    /**
+     * Deselect the currently selected card
+     */
 	private void deselect() {
 		if (selected != null) {
 			selected.toggleSelected();
@@ -311,11 +367,18 @@ class Game {
 		}
 	}
 
+    /**
+     * Set the selected variable to be equal to a card
+     * @param card the card to select
+     */
 	private void select(Card card) {
 		selected = card;
 		selected.toggleSelected();
 	}
 
+    /**
+     * Handle the hand being clicked
+     */
 	private void handClicked() {
 		if (hand.isEmpty()) {
 			resetHand();
@@ -324,7 +387,10 @@ class Game {
 		}
 		deselect();
 	}
-	
+
+    /**
+     * Handle the waste being clicked
+     */
 	private void wasteClicked() {
 		if (!waste.isEmpty()) {
 			Card card = waste.peek();
@@ -339,6 +405,11 @@ class Game {
 		}
 	}
 
+    /**
+     * Handles the board being clicked
+     * @param indexX the column on the board clicked
+     * @param indexY the card in the column clicked
+     */
 	private void boardClicked(int indexX, int indexY) {
 		Stack<Card> stack = board.get(indexX);
 		Card card = stack.get(indexY);
@@ -357,8 +428,12 @@ class Game {
 			deselect();
 			select(card);
 		}
-	}	
-	
+	}
+
+    /**
+     * Handle the foundations being clicked
+     * @param index
+     */
 	private void foundationsClicked(int index) {
 		Card card = foundations.get(index).peek();
 		if (selected == card) {
@@ -370,20 +445,44 @@ class Game {
 		card.toggleSelected();
 	}
 
+    /**
+     * Draw the specified text to the game canvas in black and with left text alignment.
+     * @param text the text to draw
+     * @param x the x coordinate to draw at
+     * @param y the y coordinate to draw at
+     */
 	private void drawText(String text, double x, double y) {
 		drawText(text, x, y, Color.BLACK);
 	}
 
+    /**
+     * Draw the specified text to the game canvas with the specified Paint and with left text alignment.
+     * @param text the text to draw
+     * @param x the x coordinate to draw at
+     * @param y the y coordinate to draw at
+     * @param paint the Paint to draw the text with
+     */
 	private void drawText(String text, double x, double y, Paint paint) {
 		drawText(text, x, y, paint, TextAlignment.LEFT);
 	}
 
+    /**
+     * Draw the specified text to the game canvas with the specified Paint and TextAlignment
+     * @param text the text to draw
+     * @param x the x coordinate to draw at
+     * @param y the y coordinate to draw at
+     * @param paint the Paint to draw the text with
+     * @param textAlignment the TextAlignment to draw with
+     */
 	private void drawText(String text, double x, double y, Paint paint, TextAlignment textAlignment) {
 		gc.setStroke(paint);
 		gc.setTextAlign(textAlignment);
 		gc.strokeText(text, x, y);
 	}
 
+    /**
+     * Reveal any cards which are not yet revealed and on the bottom of their board stack
+     */
 	private void revealCards() {
 		for (Stack<Card> stack : board) {
 			Card card = stack.peek();
@@ -392,7 +491,11 @@ class Game {
 			}
 		}
 	}
-	
+
+    /**
+     * Perform final cleanup for the handleMouseClicked() function
+     * @param me the MouseEvent passed by handleMouseClicked()
+     */
 	private void finish(MouseEvent me) {
 		revealCards();
 		drawGame();

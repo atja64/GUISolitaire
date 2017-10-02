@@ -8,7 +8,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 /**
- *
+ * The main class that manages the launching of the game window
  * @author Ashley Allen
  */
 public class GUISolitaire extends Application {
