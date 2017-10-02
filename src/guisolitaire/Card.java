@@ -4,10 +4,11 @@ package guisolitaire;
  *
  * @author Ashley Allen
  */
-public class Card {
+class Card {
 	private final Suit suit;
 	private final Value value;
 	private final CardColor color;
+	
 	private boolean revealed = false, selected = false;
 	
 	/**
@@ -29,7 +30,7 @@ public class Card {
 	 * Get the card's Suit
 	 * @return the card's Suit
 	 */
-	public Suit getSuit() {
+	Suit getSuit() {
 		return suit;
 	}
 	
@@ -37,18 +38,22 @@ public class Card {
 	 * Get the card's value
 	 * @return the card's Value
 	 */
-	public Value getValue() {
+	Value getValue() {
 		return value;
 	}
 	
-	public CardColor getColor() {
+	/**
+	 * Get the card's color
+	 * @return the card's color
+	 */
+	CardColor getColor() {
 		return color;
 	}
 	
 	/**
 	 * Set this card's revealed to true
 	 */
-	public void reveal() {
+	void reveal() {
 		revealed = true;
 	}
 	
@@ -56,15 +61,30 @@ public class Card {
 	 * Get the value of revealed
 	 * @return the value of revealed
 	 */
-	public boolean isRevealed() {
+	boolean isRevealed() {
 		return revealed;
 	}
 	
-	public void toggleSelected() {
+	/**
+	 * Toggle whether this card is selected or not
+	 */
+	void toggleSelected() {
 		selected = !selected;
 	}
 	
-	public boolean isSelected() {
+	/**
+	 * Get whether this card is selected
+	 * @return true if this card is selected
+	 */
+	boolean isSelected() {
 		return selected;
+	}
+	
+	/**
+	 * Get the name of this card 
+	 * @return the name of the card in the format [value]of[suit]s
+	 */
+	String getName() {
+		return value.toString().toLowerCase() + "of" + suit.toString().toLowerCase() + "s";
 	}
 }

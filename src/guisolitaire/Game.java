@@ -1,40 +1,47 @@
 package guisolitaire;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Stack;
+import java.util.*;
+
+import javafx.geometry.BoundingBox;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 
 /**
  *
  * @author Ashley Allen
  */
-public class Game {
-	private final Stack<Card> pack = new Stack<>();
-	private final Stack<Card> waste = new Stack<>();
-	private final List<Stack<Card>> board = new ArrayList<>(), podium = new ArrayList<>();
+class Game {
+	private final double CARD_WIDTH = 100, CARD_HEIGHT = 145.2,
+		ROUNDING_FACTOR = 10, PADDING = 25;	
+	
+	private final Stack<Card> hand = new Stack<>(),
+		waste = new Stack<>();
+	private final List<Stack<Card>> board = new ArrayList<>(), foundations = new ArrayList<>();
+	private final BoundingBox handBounds = new BoundingBox(PADDING, PADDING, CARD_WIDTH, CARD_HEIGHT),
+		wasteBounds = new BoundingBox(PADDING * 2 + CARD_WIDTH, PADDING, CARD_WIDTH, CARD_HEIGHT);
+	private final List<BoundingBox> foundationsBounds = new ArrayList<>();
+	private final List<List<BoundingBox>> boardBounds = new ArrayList<>();
 	private final Map<String, Image> imageCache = new HashMap<>();
-	private final Map<String, Bounds> bounds = new HashMap<>();
 	private final Random random = new Random();
 	private final GraphicsContext gc;
-	private final double CARD_WIDTH = 100, CARD_HEIGHT = 145.2, ROUNDING_FACTOR = 10;
-	
-	private Card selected;
+
+	private String alertText = null;
+	private Card selected = null;
 	
 	Game(GraphicsContext gc) {
 		this.gc = gc;
 		initVars();
-		fillBounds();
 		loadImages();
 		fillPack();
 		shufflePack();
 		layBoard();
+		generateBoardBounds();
+		revealCards();
 		drawGame();
 	}
 	
@@ -42,28 +49,9 @@ public class Game {
 	 * Initialises the 2D ArrayLists to avoid NullPointer exceptions
 	 */
 	private void initVars() {
-		for (int i = 0; i < 7; i++) {
-			board.add(new Stack<>());
-		}
 		for (int i = 0; i < 4; i++) {
-			podium.add(new Stack<>());
-		}
-	}
-	
-	private void fillBounds() {
-		double y1 = 25;
-		double y2 = 50 + CARD_HEIGHT;
-		double[] x = new double[7];
-		for (int i = 0; i < 7; i++) {
-			x[i] = 25 + i * (CARD_WIDTH + 25);
-		}
-		bounds.put("hand", new Bounds(x[0], y1, x[0] + CARD_WIDTH, y1 + CARD_HEIGHT));
-		bounds.put("waste", new Bounds(x[1], y1, x[1] + CARD_WIDTH, y1 + CARD_HEIGHT));
-		for (int i = 0; i < 7; i++) {
-			bounds.put("board" + i, new Bounds(x[i], y2, x[i] + CARD_WIDTH, y2 + CARD_HEIGHT + 15 * 25));
-		}
-		for (int i = 0; i < 4; i++) {
-			bounds.put("podium" + i, new Bounds(x[3 + i], y1, x[3 + i] + CARD_WIDTH, y1 + CARD_HEIGHT));
+			foundations.add(new Stack<>());
+			foundationsBounds.add(new BoundingBox(PADDING + (CARD_WIDTH + PADDING) * (3 + i), PADDING, CARD_WIDTH, CARD_HEIGHT));
 		}
 	}
 	
@@ -71,10 +59,10 @@ public class Game {
 	 * Fill the pack Stack with each card in a 52 card deck
 	 */
 	private void fillPack() {
-		pack.clear();
+		hand.clear();
 		for (Suit suit : Suit.values()) {
 			for (Value value : Value.values()) {
-				pack.push(new Card(suit, value));
+				hand.push(new Card(suit, value));
 			}
 		}
 	}
@@ -94,9 +82,9 @@ public class Game {
 	 * @param i2 the index of the second card to be swapped
 	 */
 	private void swapCard(int i1, int i2) {
-		Card temp = pack.get(i1);
-		pack.set(i1, pack.get(i2));
-		pack.set(i2, temp);
+		Card temp = hand.get(i1);
+		hand.set(i1, hand.get(i2));
+		hand.set(i2, temp);
 	}
 	
 	/**
@@ -104,15 +92,24 @@ public class Game {
 	 * sequentially increasing stacks of cards on each space of the board
 	 */
 	private void layBoard() {
+		board.clear();
 		for (int i = 0; i < 7; i++) {
-			Stack<Card> stack = board.get(i);
-			for (int j = 0; j < i; j++) {
-				stack.push(pack.pop());
+			Stack<Card> stack = new Stack<>();
+			for (int j = 0; j < i + 1; j++) {
+				stack.push(hand.pop());
 			}
-			Card lastCard = pack.pop();
-			lastCard.reveal();
-			stack.push(lastCard);
 			board.add(stack);
+		}
+	}
+	
+	private void generateBoardBounds() {
+		boardBounds.clear();
+		for (int i = 0; i < 7; i++) {
+			boardBounds.add(new ArrayList<>());
+			Stack<Card> stack = board.get(i);
+			for (int j = 0; j < stack.size(); j++) {
+				boardBounds.get(i).add(new BoundingBox(PADDING + (CARD_WIDTH + PADDING) * i, PADDING * (2 + j) + CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT));
+			}
 		}
 	}
 	
@@ -121,7 +118,7 @@ public class Game {
 	 * waste face up.
 	 */
 	private void turnHand() {
-		waste.push(pack.pop());
+		waste.push(hand.pop());
 	}
 	
 	/**
@@ -130,7 +127,7 @@ public class Game {
 	private void resetHand() {
 		int size = waste.size();
 		for (int i = 0; i < size; i++) {
-			pack.push(waste.pop());
+			hand.push(waste.pop());
 		}
 	}
 	
@@ -149,58 +146,97 @@ public class Game {
 		}
 		return true;
 	}
+
+	private void moveCard(Stack<Card> stack) {
+		waste.remove(selected);
+		for (Stack<Card> boardStack : board) {
+			boardStack.remove(selected);
+		}
+		for (Stack<Card> foundStack : foundations) {
+			foundStack.remove(selected);
+		}
+		stack.push(selected);
+	}
 	
-	/**
-	 * Draw the game board including the hand, waste, board and podium.
-	 */
 	private void drawGame() {
 		gc.clearRect(0, 0, 900, 600);
-
+		
 		//Draw the hand
-		Coordinates coords = bounds.get("hand").getTopLeft();
-		if (pack.isEmpty()) {
-			drawEmpty(coords);
+		double x = PADDING, y = PADDING;
+		if (hand.isEmpty()) {
+			drawEmpty(x, y);
 		} else {
-			drawCardBack(coords);
+			drawCardBack(x, y);
 		}
 		
 		//Draw the waste
-		coords = bounds.get("waste").getTopLeft();
+		x = PADDING * 2 + CARD_WIDTH;
+		y = PADDING;
 		if (waste.isEmpty()) {
-			drawEmpty(coords);
+			drawEmpty(x, y);
 		} else {
-			drawCard(waste.peek(), coords);
+			drawCard(waste.peek(), x, y);
 		}
 		
-		//Draw the main board
+		//Draw the board
 		for (int i = 0; i < 7; i++) {
-			coords = bounds.get("board" + i).getTopLeft();
+			x = PADDING + (CARD_WIDTH + PADDING) * i;
 			Stack<Card> stack = board.get(i);
 			if (stack.isEmpty()) {
-				drawEmpty(coords);
+				drawEmpty(x, PADDING * 2 + CARD_HEIGHT);
 			} else {
 				for (int j = 0; j < stack.size(); j++) {
+					y = PADDING * (2 + j) + CARD_HEIGHT;
 					Card card = stack.get(j);
 					if (card.isRevealed()) {
-						drawCard(card, coords);
+						drawCard(card, x, y);
 					} else {
-						drawCardBack(coords);
+						drawCardBack(x, y);
 					}
-					coords = coords.addY(25);
 				}
 			}
 		}
 		
-		//Draw the podium
+		//Draw the foundations
+		y = PADDING;
 		for (int i = 0; i < 4; i++) {
-			coords = bounds.get("podium" + i).getTopLeft();
-			Stack<Card> stack = podium.get(i);
+			x = PADDING + (CARD_WIDTH + PADDING) * (3 + i);			
+			Stack<Card> stack = foundations.get(i);
 			if (stack.isEmpty()) {
-				drawEmpty(coords);
+				drawEmpty(x, y);
 			} else {
-				drawCard(stack.peek(), coords);
+				drawCard(stack.peek(), x, y);
 			}
 		}
+
+		if (selected != null) {
+			drawText(selected.getName(), 10, 590);
+		} else {
+			drawText("null", 10, 590);
+		}
+
+		if (alertText != null) {
+			drawText(alertText, 890, 590, Color.RED, TextAlignment.RIGHT);
+		}
+	}
+	
+	private void drawCard(Card card, double x, double y) {
+		gc.drawImage(imageCache.get(card.getName()), x, y, CARD_WIDTH, CARD_HEIGHT);
+		if (card.isSelected()) {
+			gc.setStroke(Color.LIGHTBLUE);
+			gc.setLineWidth(3);
+			gc.strokeRoundRect(x, y, CARD_WIDTH, CARD_HEIGHT, ROUNDING_FACTOR, ROUNDING_FACTOR);
+		}
+	}
+	
+	private void drawCardBack(double x, double y) {
+		gc.drawImage(imageCache.get("cardback"), x, y, CARD_WIDTH, CARD_HEIGHT);
+	}
+	
+	private void drawEmpty(double x, double y) {
+		gc.setStroke(Color.WHITE);
+		gc.setLineWidth(1);
+		gc.strokeRoundRect(x, y, CARD_WIDTH, CARD_HEIGHT, ROUNDING_FACTOR, ROUNDING_FACTOR);
 	}
 	
 	/**
@@ -216,70 +252,149 @@ public class Game {
 		imageCache.put("cardback", new Image(this.getClass().getResourceAsStream("/res/cards/cardback.png")));
 	}
 	
-	/**
-	 * Draw an empty space at the specified coordinates
-	 * @param x the x coordinate of the upper left corner to draw from
-	 * @param y the y coordinate of the upper left corner to draw from
-	 */
-	private void drawEmpty(Coordinates coords) {
-		gc.setStroke(Color.WHITE);
-		gc.setLineWidth(1);
-		gc.strokeRoundRect(coords.getX(), coords.getY(), CARD_WIDTH, CARD_HEIGHT, ROUNDING_FACTOR, ROUNDING_FACTOR);
-	}
-	
-	/**
-	 * Draw a card at the specified coordinates
-	 * @param card the card to be drawn
-	 * @param x the x coordinate of the upper left corner to draw from
-	 * @param y the y coordinate of the upper left corner to draw from
-	 */
-	private void drawCard(Card card, Coordinates coords) {
-		String filename = card.getValue().toString().toLowerCase() + "of" + card.getSuit().toString().toLowerCase() + "s";
-		gc.drawImage(imageCache.get(filename), coords.getX(), coords.getY(), CARD_WIDTH, CARD_HEIGHT);
-		if (card.isSelected()) {
-			gc.setStroke(Color.LIGHTBLUE);
-			gc.setLineWidth(3.5);
-			gc.strokeRoundRect(coords.getX(), coords.getY(), CARD_WIDTH, CARD_HEIGHT, ROUNDING_FACTOR, ROUNDING_FACTOR);
-		}
-	}
-	
-	/**
-	 * Draw a card back at the specified coordinates
-	 * @param x the x coordinate of the upper left corner to draw from
-	 * @param y the y coordinate of the upper left corner to draw from
-	 */
-	private void drawCardBack(Coordinates coords) {
-		gc.drawImage(imageCache.get("cardback"), coords.getX(), coords.getY(), CARD_WIDTH, CARD_HEIGHT);	
-	}
-	
-	/**
-	 * Handle the MouseEvent generated by the OnMouseClicked from the Canvas element
-	 * @param me the MouseEvent to be handled
-	 */
-	public void handleMouseClicked(MouseEvent me) {
-		Coordinates coords = new Coordinates(me.getX(), me.getY());
-		
-		//If the hand is clicked turn the hand or reset it accordingly.
-		if (bounds.get("hand").isInBounds(coords)) {
-			if (pack.isEmpty()) {
-				resetHand();
-			} else {
-				turnHand();
-			}
+	void handleMouseClicked(MouseEvent me) {
+		double x = me.getX(), y = me.getY();
+
+		alertText = null;
+
+		//Handle hand interactivity
+		if (handBounds.contains(x, y)) {
+			handClicked();
+			finish(me);
+			return;
 		}
 		
-		if (bounds.get("waste").isInBounds(coords)) {
-			if (!waste.isEmpty()) {
-				if (waste.peek() == selected) {
-					selected = null;
-				} else {
-					selected = waste.peek();
+		//Handle waste interactivity
+		if (wasteBounds.contains(x, y)) {
+			wasteClicked();
+			finish(me);
+			return;
+		}
+		
+		//Handle board interactivity
+		boolean boardClicked = false;
+		int indexX = -1, indexY = -1;
+		for (int i = 0; i < 7; i++) {
+			List<BoundingBox> boundsList = boardBounds.get(i);
+			for (int j = 0; j < boundsList.size(); j++) {
+				if (boundsList.get(j).contains(x, y) && board.get(i).get(j).isRevealed()) {
+					indexX = i;
+					indexY = j;
+					boardClicked = true;
 				}
-				waste.peek().toggleSelected();
+			}
+			if (boardClicked) {
+				boardClicked(indexX, indexY);
+				finish(me);
+				return;
 			}
 		}
 		
-		//Draw the game and consume the MouseEvent
+		//Handle foundations interactivity
+		for (int i = 0; i < 4; i++) {
+			if (foundationsBounds.get(i).contains(x, y)) {
+				foundationsClicked(i);
+				finish(me);
+				return;
+			}
+		}
+
+		//If nothing was clicked
+		deselect();
+		finish(me);
+	}
+
+	private void deselect() {
+		if (selected != null) {
+			selected.toggleSelected();
+			selected = null;
+		}
+	}
+
+	private void select(Card card) {
+		selected = card;
+		selected.toggleSelected();
+	}
+
+	private void handClicked() {
+		if (hand.isEmpty()) {
+			resetHand();
+		} else {
+			turnHand();
+		}
+		deselect();
+	}
+	
+	private void wasteClicked() {
+		if (!waste.isEmpty()) {
+			Card card = waste.peek();
+			if (selected == card) {
+				deselect();
+			} else {
+				deselect();
+				select(card);
+			}
+		} else {
+			deselect();
+		}
+	}
+
+	private void boardClicked(int indexX, int indexY) {
+		Stack<Card> stack = board.get(indexX);
+		Card card = stack.get(indexY);
+		if (selected == card) {
+			deselect();
+		} else if (selected != null & indexY == stack.size() - 1) {
+			if (isValidBoardMove(card, selected)) {
+				moveCard(stack);
+				generateBoardBounds();
+				deselect();
+			} else {
+				alertText = "Invalid move!";
+				deselect();
+			}
+		} else {
+			deselect();
+			select(card);
+		}
+	}	
+	
+	private void foundationsClicked(int index) {
+		Card card = foundations.get(index).peek();
+		if (selected == card) {
+			deselect();
+		} else {
+			deselect();
+			select(card);
+		}
+		card.toggleSelected();
+	}
+
+	private void drawText(String text, double x, double y) {
+		drawText(text, x, y, Color.BLACK);
+	}
+
+	private void drawText(String text, double x, double y, Paint paint) {
+		drawText(text, x, y, paint, TextAlignment.LEFT);
+	}
+
+	private void drawText(String text, double x, double y, Paint paint, TextAlignment textAlignment) {
+		gc.setStroke(paint);
+		gc.setTextAlign(textAlignment);
+		gc.strokeText(text, x, y);
+	}
+
+	private void revealCards() {
+		for (Stack<Card> stack : board) {
+			Card card = stack.peek();
+			if (!card.isRevealed()) {
+				card.reveal();
+			}
+		}
+	}
+	
+	private void finish(MouseEvent me) {
+		revealCards();
 		drawGame();
 		me.consume();
 	}
