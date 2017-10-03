@@ -30,3 +30,7 @@
 * Add move hints
 * Add auto-completion
 * Add draw-three option
+
+## Licensing
+
+This software is licensed under the MIT License. Please see the [License] file for more information.
