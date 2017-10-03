@@ -8,7 +8,6 @@ import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 
 /**
@@ -35,7 +34,7 @@ class Game {
 
 	//Variables that can change during the game which need global access
 	private String alertText = null;
-	private Card selected = null;
+	private Stack<Card> selected = new Stack<>();
 
     /**
      * The main constructor which initialises the game in its entirety and handles all the card movement before drawing
@@ -190,15 +189,17 @@ class Game {
      * TODO: Make more efficient than checking each Stack for the presence of the selected card
      * @param stack the Stack to move to
      */
-	private void moveCard(Stack<Card> stack) {
-		waste.remove(selected);
-		for (Stack<Card> boardStack : board) {
-			boardStack.remove(selected);
+	private void moveCards(Stack<Card> stack) {
+		for (Card card : selected) {
+			waste.remove(card);
+			for (Stack<Card> boardStack : board) {
+				boardStack.remove(card);
+			}
+			for (Stack<Card> foundStack : foundations) {
+				foundStack.remove(card);
+			}
+			stack.push(card);
 		}
-		for (Stack<Card> foundStack : foundations) {
-			foundStack.remove(selected);
-		}
-		stack.push(selected);
 	}
 
     /**
@@ -257,10 +258,10 @@ class Game {
 		}
 
 		//Draw the card indicator text
-		if (selected != null) {
-			drawText(selected.getName(), 10, 590);
-		} else {
+		if (selected.isEmpty()) {
 			drawText("null", 10, 590);
+		} else {
+			drawText(selected.get(0).getName(), 10, 590);
 		}
 
 		//Draw the alert text
@@ -381,9 +382,11 @@ class Game {
      * Deselect the currently selected card
      */
 	private void deselect() {
-		if (selected != null) {
-			selected.toggleSelected();
-			selected = null;
+		if (!selected.isEmpty()) {
+			for (Card card : selected) {
+				card.toggleSelected();
+			}
+			selected.clear();
 		}
 	}
 
@@ -392,8 +395,8 @@ class Game {
      * @param card the card to select
      */
 	private void select(Card card) {
-		selected = card;
-		selected.toggleSelected();
+		card.toggleSelected();
+		selected.add(card);
 	}
 
     /**
@@ -414,7 +417,7 @@ class Game {
 	private void wasteClicked() {
 		if (!waste.isEmpty()) {
 			Card card = waste.peek();
-			if (selected == card) {
+			if (!selected.isEmpty() && selected.contains(card)) {
 				deselect();
 			} else {
 				deselect();
@@ -436,11 +439,11 @@ class Game {
 		if (!stack.isEmpty()) {
 			card = stack.get(indexY);
 		}
-		if (selected == card) {
-			deselect();
-		} else if (selected != null && (indexY == stack.size() - 1 || indexY == 0)) {
-			if (isValidBoardMove(card, selected)) {
-				moveCard(stack);
+		if (!selected.isEmpty()) {
+			if (selected.contains(card)) {
+				deselect();
+			} else if (isValidBoardMove(card, selected.get(0)) && (indexY == stack.size() - 1 || indexY == 0)) {
+				moveCards(stack);
 				generateBoardBounds();
 				deselect();
 			} else {
@@ -449,7 +452,9 @@ class Game {
 			}
 		} else {
 			deselect();
-			select(card);
+			for (int i = indexY; i < stack.size(); i++) {
+				select(stack.get(i));
+			}
 		}
 	}
 
@@ -463,11 +468,11 @@ class Game {
 		if (!stack.isEmpty()) {
 			card = stack.peek();
 		}
-		if (selected == card) {
-			deselect();
-		} else if (selected != null) {
-			if (isValidFoundationsMove(card, selected)) {
-				moveCard(stack);
+		if (!selected.isEmpty()) {
+			if (selected.contains(card)) {
+				deselect();
+			} else if (isValidFoundationsMove(card, selected.get(0))) {
+				moveCards(stack);
 				generateBoardBounds();
 				deselect();
 			} else {
