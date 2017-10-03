@@ -9,6 +9,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.TextAlignment;
+import javafx.scene.text.Font;
 
 /**
  * The main game controller class that handles all game functions and inputs
@@ -33,7 +34,7 @@ class Game {
 	private final GraphicsContext gc;
 
 	//Variables that can change during the game which need global access
-	private String alertText = null;
+	private String alertText = "", winText = "";
 	private Stack<Card> selected = new Stack<>();
 
     /**
@@ -200,6 +201,18 @@ class Game {
 			}
 			stack.push(card);
 		}
+		if (isGameWon()) {
+			winText = "You win!";
+		}
+	}
+
+	private boolean isGameWon() {
+		for (Stack<Card> stack : foundations) {
+			if (stack.size() != 13) {
+				return false;
+			}
+		}
+		return true;
 	}
 
     /**
@@ -259,15 +272,16 @@ class Game {
 
 		//Draw the card indicator text
 		if (selected.isEmpty()) {
-			drawText("null", 10, 590);
+			drawText("None", 10, 590);
 		} else {
 			drawText(selected.get(0).getName(), 10, 590);
 		}
 
 		//Draw the alert text
-		if (alertText != null) {
-			drawText(alertText, 890, 590, Color.RED, TextAlignment.RIGHT);
-		}
+		drawText(alertText, 890, 590, 12, Color.RED, TextAlignment.RIGHT);
+
+		//Draw the win text
+		drawText(winText, 450, 350, 150, Color.BLACK, TextAlignment.CENTER);
 	}
 
     /**
@@ -479,45 +493,37 @@ class Game {
 				alertText = "Invalid move!";
 				deselect();
 			}
-		} else {
+		} else if (card != null){
 			deselect();
 			select(card);
+		} else {
+			deselect();
 		}
 	}
 
-    /**
-     * Draw the specified text to the game canvas in black and with left text alignment.
-     * @param text the text to draw
-     * @param x the x coordinate to draw at
-     * @param y the y coordinate to draw at
-     */
+	/**
+	 * Draw the specified text to the game canvas at the specified coordinates.
+	 * @param text the text to draw
+	 * @param x the x coordinate to draw at
+	 * @param y the y coordinate to draw at
+	 */
 	private void drawText(String text, double x, double y) {
-		drawText(text, x, y, Color.BLACK);
+		drawText(text, x, y, Font.getDefault().getSize(), Color.BLACK, TextAlignment.LEFT);
 	}
 
     /**
-     * Draw the specified text to the game canvas with the specified Paint and with left text alignment.
-     * @param text the text to draw
-     * @param x the x coordinate to draw at
-     * @param y the y coordinate to draw at
-     * @param paint the Paint to draw the text with
-     */
-	private void drawText(String text, double x, double y, Paint paint) {
-		drawText(text, x, y, paint, TextAlignment.LEFT);
-	}
-
-    /**
-     * Draw the specified text to the game canvas with the specified Paint and TextAlignment
+	 * Draw the specified text to the game canvas at the specified coordinates with additional attributes.
      * @param text the text to draw
      * @param x the x coordinate to draw at
      * @param y the y coordinate to draw at
      * @param paint the Paint to draw the text with
      * @param textAlignment the TextAlignment to draw with
      */
-	private void drawText(String text, double x, double y, Paint paint, TextAlignment textAlignment) {
-		gc.setStroke(paint);
+	private void drawText(String text, double x, double y, double size, Paint paint, TextAlignment textAlignment) {
+		gc.setFont(new Font(size));
+		gc.setFill(paint);
 		gc.setTextAlign(textAlignment);
-		gc.strokeText(text, x, y);
+		gc.fillText(text, x, y);
 	}
 
     /**
