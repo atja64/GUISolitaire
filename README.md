@@ -1,5 +1,6 @@
 # solitaire
-A simple version of Solitaire made with JavaFX
+
+A simple version of [Solitaire](https://en.wikipedia.org/wiki/Patience_(game)) implemented in Java using JavaFX.
 
 ## Instructions
 
