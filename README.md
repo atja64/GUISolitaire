@@ -1,5 +1,5 @@
-# GUISolitaire
-**A GUI version of solitaire made with JavaFX**
+# solitaire
+A simple version of Solitaire made with JavaFX
 
 ## Instructions
 
@@ -33,4 +33,4 @@
 
 ## Licensing
 
-This software is licensed under the MIT License. Please see the [License] file for more information.
+This software is licensed under the MIT License. Please see the [License](LICENSE) file for more information.
